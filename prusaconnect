@@ -13,7 +13,7 @@
 : "${PRUSA_CONNECT_CAMERA_TOKEN:=TOKEN}"
 : "${PRUSA_LINK_KEY:=KEY}"
 
-source secrets
+source ./secrets
 
 while true; do
   state=$(curl -m 5 -sSL $PRUSA_LINK_STATUS_URL -H "X-Api-Key: $PRUSA_LINK_KEY" | jq -r ".printer.state")
@@ -34,7 +34,7 @@ while true; do
         # Reset delay to the normal value
         DELAY=$DELAY_SECONDS
     else
-      echo "FFmpeg returned an error. Retrying after ${LONG_DELAY_SECONDS}s..."
+      echo "Couldn't capture snapshot. Retrying after ${LONG_DELAY_SECONDS}s..."
 
       # Set delay to the longer value
       DELAY=$LONG_DELAY_SECONDS

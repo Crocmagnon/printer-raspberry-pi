@@ -4,6 +4,7 @@ After=network.target
 
 [Service]
 ExecStart=/home/gaugendre/printer-raspberry-pi/prusaconnect
+WorkingDirectory=/home/gaugendre/printer-raspberry-pi
 Type=exec
 Restart=always
 User=gaugendre
