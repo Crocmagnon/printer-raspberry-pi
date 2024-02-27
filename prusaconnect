@@ -1,30 +1,32 @@
 #!/bin/bash
 
 # Set default values for environment variables
-: "${HTTP_URL:=https://webcam.connect.prusa3d.com/c/snapshot}"
-#: "${CAMERA_DEVICE:=/dev/video0}"
-#: "${RTSP_URL:=rtsp://127.0.0.1/stream1}"
-: "${WEBCAM_URL:=http://127.0.0.1:8080/snapshot}"
+: "${PRUSA_CONNECT_URL:=https://webcam.connect.prusa3d.com/c/snapshot}"
+: "${WEBCAM_SNAPSHOT_URL:=http://127.0.0.1:8080/snapshot}"
+: "${PRUSA_LINK_STATUS_URL:=http://192.168.0.130/api/v1/status}"
 : "${DELAY_SECONDS:=10}"
 : "${LONG_DELAY_SECONDS:=60}"
-: "${FINGERPRINT:=6hQoYaD67pVje5UuZCNw}"
-: "${TOKEN:=RqOepwpzApYOjoGjQst7}"
 : "${IMG_PATH:=$HOME/output.jpg}"
-: "${STATUS_URL:=http://192.168.0.130/api/v1/status}"
-: "${PRUSALINK_KEY:=iv3yNhDfDRaHdeD}"
+
+# secrets
+: "${PRUSA_CONNECT_CAMERA_FINGERPRINT:=FINGERPRINT}"
+: "${PRUSA_CONNECT_CAMERA_TOKEN:=TOKEN}"
+: "${PRUSA_LINK_KEY:=KEY}"
+
+source secrets
 
 while true; do
-  state=$(curl -m 5 -sSL $STATUS_URL -H "X-Api-Key: $PRUSALINK_KEY" | jq -r ".printer.state")
+  state=$(curl -m 5 -sSL $PRUSA_LINK_STATUS_URL -H "X-Api-Key: $PRUSA_LINK_KEY" | jq -r ".printer.state")
   if [ $state == "PRINTING" ]; then
-    curl -k -sSL $WEBCAM_URL -o $IMG_PATH
+    curl -k -sSL $WEBCAM_SNAPSHOT_URL -o $IMG_PATH
     # If no error, upload it.
     if [ $? -eq 0 ]; then
       # POST the image to the HTTP URL using curl
-      curl -X PUT "$HTTP_URL" \
+      curl -X PUT "$PRUSA_CONNECT_URL" \
         -H "accept: */*" \
         -H "content-type: image/jpg" \
-        -H "fingerprint: $FINGERPRINT" \
-        -H "token: $TOKEN" \
+        -H "fingerprint: $PRUSA_CONNECT_CAMERA_FINGERPRINT" \
+        -H "token: $PRUSA_CONNECT_CAMERA_TOKEN" \
         --data-binary "@$IMG_PATH" \
         --no-progress-meter \
         --compressed
