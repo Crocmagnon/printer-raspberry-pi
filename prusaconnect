@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Set default values for environment variables
+: "${HTTP_URL:=https://webcam.connect.prusa3d.com/c/snapshot}"
+#: "${CAMERA_DEVICE:=/dev/video0}"
+#: "${RTSP_URL:=rtsp://127.0.0.1/stream1}"
+: "${WEBCAM_URL:=http://127.0.0.1:8080/snapshot}"
+: "${DELAY_SECONDS:=10}"
+: "${LONG_DELAY_SECONDS:=60}"
+: "${FINGERPRINT:=6hQoYaD67pVje5UuZCNw}"
+: "${TOKEN:=RqOepwpzApYOjoGjQst7}"
+: "${IMG_PATH:=$HOME/output.jpg}"
+: "${STATUS_URL:=http://192.168.0.130/api/v1/status}"
+: "${PRUSALINK_KEY:=iv3yNhDfDRaHdeD}"
+
+while true; do
+  state=$(curl -m 5 -sSL $STATUS_URL -H "X-Api-Key: $PRUSALINK_KEY" | jq -r ".printer.state")
+  if [ $state == "PRINTING" ]; then
+    curl -k -sSL $WEBCAM_URL -o $IMG_PATH
+    # If no error, upload it.
+    if [ $? -eq 0 ]; then
+      # POST the image to the HTTP URL using curl
+      curl -X PUT "$HTTP_URL" \
+        -H "accept: */*" \
+        -H "content-type: image/jpg" \
+        -H "fingerprint: $FINGERPRINT" \
+        -H "token: $TOKEN" \
+        --data-binary "@$IMG_PATH" \
+        --no-progress-meter \
+        --compressed
+
+        # Reset delay to the normal value
+        DELAY=$DELAY_SECONDS
+    else
+      echo "FFmpeg returned an error. Retrying after ${LONG_DELAY_SECONDS}s..."
+
+      # Set delay to the longer value
+      DELAY=$LONG_DELAY_SECONDS
+    fi
+  else
+    echo "printer not printing. retrying after ${LONG_DELAY_SECONDS}s..."
+    DELAY=$LONG_DELAY_SECONDS
+  fi
+  sleep "$DELAY"
+  done

@@ -1,0 +1,14 @@
+[Unit]
+Description=Stream camera to mjpeg
+After=network.target
+
+[Service]
+ExecStart=/home/gaugendre/printer-raspberry-pi/stream
+Type=exec
+Restart=always
+User=gaugendre
+Group=gaugendre
+
+[Install]
+WantedBy=default.target
+RequiredBy=network.target
